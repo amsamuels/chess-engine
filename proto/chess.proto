@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package chess;
+
+option go_package = "./proto";
+
+
+service ChessService {
+  rpc StartGame(StartGameRequest) returns (StartGameResponse);
+  rpc SubmitMove(MoveRequest) returns (MoveResponse);
+  rpc GetGameState(GameStateRequest) returns (GameStateResponse);
+}
+
+enum OpponentType {
+  PLAYER = 0;
+  AGENT = 1;
+}
+
+enum Color {
+  WHITE = 0;
+  BLACK = 1;
+}
+
+message StartGameRequest {
+  string player_name = 1;
+  OpponentType opponent_type = 2;
+}
+
+message StartGameResponse {
+  string game_id = 1;
+  string player_id = 2;
+  string opponent_id = 3;
+  Color color = 4;
+}
+
+message MoveRequest {
+  string game_id = 1;
+  string player_id = 2;
+  string from_square = 3;
+  string to_square = 4;
+}
+
+message MoveResponse {
+  bool success = 1;
+  string message = 2;
+  string fen = 3;
+  string next_turn = 4;
+}
+
+message GameStateRequest {
+  string game_id = 1;
+}
+
+message GameStateResponse {
+  string fen = 1;
+  string current_turn = 2;
+  repeated string move_history = 3;
+}
