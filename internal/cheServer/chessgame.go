@@ -3,6 +3,7 @@ package cheServer
 import (
 	pb "chess-engine/gen"
 	"context"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -68,29 +69,33 @@ func (s *GameServer) StartGame(ctx context.Context, req *pb.StartGameRequest) (*
 }
 
 func (s *GameServer) SubmitMove(ctx context.Context, req *pb.MoveRequest) (*pb.MoveResponse, error) {
-	// 1. Look up the game by req.GameId
-	// 2. Validate the move (for now just basic checks: exists, turn, from != to)
-	// 3. Update the move history (append "e2e4" format or similar)
-	// 4. Update FEN (you can skip or use placeholder for now)
-	// 5. Toggle turn
-	// 6. Return success with new FEN and next player's ID
-
-	_, ok := s.GameState[req.GameId]
-	if !ok {
-		return &pb.MoveResponse{
-			Success: false,
-			Message: "gameId not valid no session for this gameid",
-		}, nil
+	game, err := s.getGameByID(req.GameId)
+	if err != nil {
+		return fail("Game not found"), nil
 	}
 
-	if req.GetFromSquare() == "" || req.GetToSquare() == "" {
-		return &pb.MoveResponse{
-			Success: false,
-			Message: "Missing move squares: both from_square and to_square are required.",
-		}, nil
+	fromRow, fromCol, toRow, toCol, err := validateCoordinates(req.FromSquare, req.ToSquare)
+	if err != nil {
+		return fail(err.Error()), nil
 	}
 
-	return &pb.MoveResponse{
-		Success: true,
-	}, nil
+	piece := game.Board[fromRow][fromCol]
+	if piece == Empty {
+		return fail("No piece at from_square"), nil
+	}
+	if !isCorrectTurn(piece, game.TurnColor) {
+		return fail("Not your turn"), nil
+	}
+
+	if !isValidMove(piece, fromRow, fromCol, toRow, toCol, game) {
+		return fail(fmt.Sprintf("Illegal move for %s", piece)), nil
+	}
+
+	applyMove(game, fromRow, fromCol, toRow, toCol)
+
+	endMessage := checkGameStatus(game)
+
+	fen := generateFEN(game.Board, game.TurnColor, len(game.Moves)/2+1)
+
+	return buildMoveResponse(true, endMessage, fen, game.PlayerID), nil
 }
