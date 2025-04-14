@@ -25,12 +25,13 @@ func TestSubmitMove(t *testing.T) {
 				// Setup initial board
 				board := cheServer.InitBoard()
 
+				// Ensure it's white's turn and piece is white
 				s.GameState[gameID] = &cheServer.GameState{
 					GameID:     gameID,
 					PlayerID:   playerID,
 					OpponentID: "p2",
-					Color:      pb.Color_WHITE,
-					TurnColor:  pb.Color_WHITE,
+					Color:      pb.Color_WHITE, // This player's assigned color
+					TurnColor:  pb.Color_WHITE, // Must match pawn's color
 					Moves:      []string{},
 					Board:      board,
 				}
@@ -68,7 +69,7 @@ func TestSubmitMove(t *testing.T) {
 				req := &pb.MoveRequest{
 					GameId:     gameID,
 					PlayerId:   playerID,
-					FromSquare: "e5", // empty at start
+					FromSquare: "e5", // no piece here in initial board
 					ToSquare:   "e6",
 				}
 				return s, req

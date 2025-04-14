@@ -28,13 +28,13 @@ type Board [8][8]Piece
 func InitBoard() Board {
 	var board Board
 
-	// Place white pieces
-	board[0] = [8]Piece{WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook}
-	board[1] = [8]Piece{WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn}
+	// Place black pieces (rank 8 and 7)
+	board[0] = [8]Piece{BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook}
+	board[1] = [8]Piece{BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn}
 
-	// Place black pieces
-	board[6] = [8]Piece{BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn, BlackPawn}
-	board[7] = [8]Piece{BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook}
+	// Place white pieces (rank 1 and 2)
+	board[6] = [8]Piece{WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn, WhitePawn}
+	board[7] = [8]Piece{WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook}
 
 	return board
 }
