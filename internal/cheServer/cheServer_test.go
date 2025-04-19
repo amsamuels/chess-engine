@@ -29,13 +29,13 @@ func TestSubmitMove(t *testing.T) {
 
 				// Ensure it's white's turn and piece is white
 				s.GameState[gameID] = &game.GameState{
-					GameID:     gameID,
-					PlayerID:   playerID,
-					OpponentID: "p2",
-					Color:      pb.Color_WHITE, // This player's assigned color
-					TurnColor:  pb.Color_WHITE, // Must match pawn's color
-					Moves:      []string{},
-					Board:      board,
+					GameID:      gameID,
+					PlayerID:    playerID,
+					OpponentID:  "p2",
+					PlayerColor: pb.Color_WHITE, // This player's assigned color
+					TurnColor:   pb.Color_WHITE, // Must match pawn's color
+					Moves:       []string{},
+					Board:       board,
 				}
 
 				req := &pb.MoveRequest{
@@ -58,13 +58,13 @@ func TestSubmitMove(t *testing.T) {
 
 				board := board.NewChessBoard()
 				s.GameState[gameID] = &game.GameState{
-					GameID:     gameID,
-					PlayerID:   playerID,
-					OpponentID: "p2",
-					Color:      pb.Color_WHITE,
-					TurnColor:  pb.Color_WHITE,
-					Moves:      []string{},
-					Board:      board,
+					GameID:      gameID,
+					PlayerID:    playerID,
+					OpponentID:  "p2",
+					PlayerColor: pb.Color_WHITE,
+					TurnColor:   pb.Color_WHITE,
+					Moves:       []string{},
+					Board:       board,
 				}
 
 				req := &pb.MoveRequest{

@@ -17,7 +17,7 @@ func ValidateCoordinates(from, to string) (int, int, int, int, error) {
 	return fromRow, fromCol, toRow, toCol, nil
 }
 
-func oppositeColor(color pb.Color) pb.Color {
+func OppositeColor(color pb.Color) pb.Color {
 	if color == pb.Color_WHITE {
 		return pb.Color_BLACK
 	}

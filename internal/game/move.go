@@ -45,7 +45,7 @@ func CheckGameStatus(game *GameState) string {
 
 	switch {
 	case inCheck && !hasMoves:
-		return fmt.Sprintf("Checkmate! %s wins.", oppositeColor(opponent).String())
+		return fmt.Sprintf("Checkmate! %s wins.", OppositeColor(opponent).String())
 	case !inCheck && !hasMoves:
 		return "Stalemate! It's a draw."
 	case inCheck:

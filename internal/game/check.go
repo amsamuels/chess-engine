@@ -29,7 +29,7 @@ func isKingInCheck(b *board.Bitboard, color pb.Color) bool {
 	}
 
 	// Step 2: See if any opponent piece can move to the king
-	opponentColor := oppositeColor(color)
+	opponentColor := OppositeColor(color)
 
 	for r := 0; r < 8; r++ {
 		for c := 0; c < 8; c++ {

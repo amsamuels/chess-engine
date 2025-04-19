@@ -6,11 +6,12 @@ import (
 )
 
 type GameState struct {
-	GameID     string
-	PlayerID   string
-	OpponentID string
-	Color      pb.Color
-	Moves      []string // placeholder for move history
-	Board      *board.Bitboard
-	TurnColor  pb.Color // Track whose turn it is
+	GameID        string
+	PlayerID      string
+	OpponentID    string
+	PlayerColor   pb.Color
+	OpponentColor pb.Color
+	Moves         []string // placeholder for move history
+	Board         *board.Bitboard
+	TurnColor     pb.Color // Track whose turn it is
 }

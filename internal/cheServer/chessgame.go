@@ -37,16 +37,18 @@ func (s *GameServer) StartGame(ctx context.Context, req *pb.StartGameRequest) (*
 
 	// 2. Randomly assign a color (WHITE or BLACK)
 	color := pb.Color(rand.Intn(2))
+	oppColor := game.OppositeColor(color)
 
 	// 3. Create the GameState object
 	gs := &game.GameState{
-		GameID:     gameID,
-		PlayerID:   playerID,
-		OpponentID: opponentID,
-		Color:      color,
-		Moves:      []string{},
-		Board:      board.NewChessBoard(),
-		TurnColor:  pb.Color_WHITE,
+		GameID:        gameID,
+		PlayerID:      playerID,
+		OpponentID:    opponentID,
+		PlayerColor:   color,
+		OpponentColor: oppColor,
+		Moves:         []string{},
+		Board:         board.NewChessBoard(),
+		TurnColor:     pb.Color_WHITE,
 	}
 	// 4. Store it in the GameServer's map
 	s.GameState[gameID] = gs
@@ -91,32 +93,10 @@ func (s *GameServer) SubmitMove(ctx context.Context, req *pb.MoveRequest) (*pb.M
 	if err != nil {
 		return game.Fail(err.Error()), nil
 	}
-
 	fromIndex := fromRow*8 + fromCol
 	toIndex := toRow*8 + toCol
 
-	piece := session.Board.GetBitmapIndex(fromIndex)
-	if piece == board.Empty {
-		return game.Fail("No piece at from_square"), nil
-	}
-
-	if !game.IsCorrectTurn(piece, session.TurnColor) {
-		return game.Fail("Not your turn"), nil
-	}
-
-	if !game.IsValidMove(piece, fromIndex, toIndex, session) {
-		return game.Fail(fmt.Sprintf("Illegal move for %s", piece)), nil
-	}
-
-	game.ApplyMove(session, piece, fromIndex, toIndex)
-
-	endMessage := game.CheckGameStatus(session)
-
-	fen := game.GenerateFEN(session.Board, session.TurnColor, len(session.Moves)/2+1)
-
-	session.Board.PrettyPrint()
-
-	return game.BuildMoveResponse(true, endMessage, fen, session.PlayerID), nil
+	return session.TryMove(fromIndex, toIndex, req.PlayerId)
 }
 
 func (s *GameServer) getGameByID(gameID string) (*game.GameState, error) {
@@ -126,18 +106,3 @@ func (s *GameServer) getGameByID(gameID string) (*game.GameState, error) {
 	}
 	return game, nil
 }
-
-/*
-internal/
-├── cheServer/          # gRPC server wiring & stateful runtime
-│   ├── server.go       # GameServer, StartGame, SubmitMove, GameState
-│   └── handler_test.go
-├── game/               # Core chess logic (board, pieces, validation, moves, FEN)
-│   ├── board.go        # InitBoard, Board type, square helpers
-│   ├── move.go         # SubmitMove, isValidMove, applyMove, check status
-│   ├── rules.go        # Pawn, Knight, Rook, Queen, King move logic
-│   ├── fen.go          # generateFEN
-│   ├── check.go        # isKingInCheck, hasAnyLegalMoves
-│   └── types.go        # Piece definitions, enums, Board, GameState
-
-*/

@@ -5,17 +5,6 @@ import (
 	"chess-engine/internal/game/board"
 )
 
-func isCapturable(target board.Piece, color pb.Color) bool {
-	if target == board.Empty {
-		return true
-	}
-	return isOpponentPiece(target, color)
-}
-
-func isOpponentPiece(target board.Piece, color pb.Color) bool {
-	return (color == pb.Color_WHITE && isBlack(target)) || (color == pb.Color_BLACK && isWhite(target))
-}
-
 func isClearPath(b *board.Bitboard, fromIndex, toIndex int) bool {
 	fromRow, fromCol := getFrom(fromIndex)
 	toRow, toCol := getTo(toIndex)
@@ -34,14 +23,6 @@ func isClearPath(b *board.Bitboard, fromIndex, toIndex int) bool {
 		c += dCol
 	}
 	return true
-}
-
-func isWhite(piece board.Piece) bool {
-	return piece >= board.WhitePawn && piece <= board.WhiteKing
-}
-
-func isBlack(piece board.Piece) bool {
-	return piece >= board.BlackPawn && piece <= board.BlackKing
 }
 
 func isValidPawnMove(b *board.Bitboard, fromIndex, toIndex int, color pb.Color) bool {
