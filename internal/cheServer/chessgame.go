@@ -2,6 +2,8 @@ package cheServer
 
 import (
 	pb "chess-engine/gen"
+	"chess-engine/internal/game"
+	"chess-engine/internal/game/board"
 	"context"
 	"fmt"
 	"math/rand"
@@ -16,22 +18,12 @@ func init() {
 
 type GameServer struct {
 	pb.UnimplementedChessServiceServer
-	GameState map[string]*GameState
-}
-
-type GameState struct {
-	GameID     string
-	PlayerID   string
-	OpponentID string
-	Color      pb.Color
-	Moves      []string // placeholder for move history
-	Board      Board
-	TurnColor  pb.Color // Track whose turn it is
+	GameState map[string]*game.GameState
 }
 
 func New() *GameServer {
 	return &GameServer{
-		GameState: make(map[string]*GameState),
+		GameState: make(map[string]*game.GameState),
 	}
 }
 
@@ -47,13 +39,13 @@ func (s *GameServer) StartGame(ctx context.Context, req *pb.StartGameRequest) (*
 	color := pb.Color(rand.Intn(2))
 
 	// 3. Create the GameState object
-	gs := &GameState{
+	gs := &game.GameState{
 		GameID:     gameID,
 		PlayerID:   playerID,
 		OpponentID: opponentID,
 		Color:      color,
 		Moves:      []string{},
-		Board:      InitBoard(),
+		Board:      board.NewChessBoard(),
 		TurnColor:  pb.Color_WHITE,
 	}
 	// 4. Store it in the GameServer's map
@@ -68,34 +60,76 @@ func (s *GameServer) StartGame(ctx context.Context, req *pb.StartGameRequest) (*
 	}, nil
 }
 
+/*
+Convert (row, col) coordinates into a linear bit index (0–63) for bitboard usage.
+
+A bitboard is a 64-bit unsigned integer where each bit represents a square on the 8×8 chess board.
+The squares are indexed from top-left (a8) to bottom-right (h1), row by row:
+
+    0  → a8   1  → b8   2  → c8  ... 7  → h8
+    8  → a7   9  → b7   ...       ...
+    ...
+    56 → a1   ...               63 → h1
+
+To compute the index from row and column:
+    index = row * 8 + col
+
+Example:
+    fromRow = 6, fromCol = 4 → "e2" → index = 6*8 + 4 = 52
+    toRow   = 4, toCol   = 4 → "e4" → index = 4*8 + 4 = 36
+
+This mapping lets us efficiently manipulate pieces on the board using bitwise operations.
+*/
+
 func (s *GameServer) SubmitMove(ctx context.Context, req *pb.MoveRequest) (*pb.MoveResponse, error) {
-	game, err := s.getGameByID(req.GameId)
+	session, err := s.getGameByID(req.GameId)
 	if err != nil {
-		return fail("Game not found"), nil
+		return game.Fail("Game not found"), nil
 	}
 
 	fromRow, fromCol, toRow, toCol, err := validateCoordinates(req.FromSquare, req.ToSquare)
 	if err != nil {
-		return fail(err.Error()), nil
+		return game.Fail(err.Error()), nil
 	}
 
-	piece := game.Board[fromRow][fromCol]
-	if piece == Empty {
-		return fail("No piece at from_square"), nil
-	}
-	if !isCorrectTurn(piece, game.TurnColor) {
-		return fail("Not your turn"), nil
-	}
+	fromIndex := fromRow*8 + fromCol
+	toIndex := toRow*8 + toCol
 
-	if !isValidMove(piece, fromRow, fromCol, toRow, toCol, game) {
-		return fail(fmt.Sprintf("Illegal move for %s", piece)), nil
+	piece := session.Board.GetBitmapIndex(fromIndex)
+	if piece == board.Empty {
+		return game.Fail("No piece at from_square"), nil
 	}
 
-	applyMove(game, fromRow, fromCol, toRow, toCol)
+	if !game.IsCorrectTurn(piece, session.TurnColor) {
+		return game.Fail("Not your turn"), nil
+	}
 
-	endMessage := checkGameStatus(game)
+	if !game.IsValidMove(piece, fromIndex, toIndex, session) {
+		return game.Fail(fmt.Sprintf("Illegal move for %s", piece)), nil
+	}
 
-	fen := generateFEN(game.Board, game.TurnColor, len(game.Moves)/2+1)
+	game.ApplyMove(session, piece, fromIndex, toIndex)
 
-	return buildMoveResponse(true, endMessage, fen, game.PlayerID), nil
+	endMessage := game.CheckGameStatus(session)
+
+	fen := game.GenerateFEN(session.Board, session.TurnColor, len(session.Moves)/2+1)
+
+	session.Board.PrettyPrint()
+
+	return game.BuildMoveResponse(true, endMessage, fen, session.PlayerID), nil
 }
+
+/*
+internal/
+├── cheServer/          # gRPC server wiring & stateful runtime
+│   ├── server.go       # GameServer, StartGame, SubmitMove, GameState
+│   └── handler_test.go
+├── game/               # Core chess logic (board, pieces, validation, moves, FEN)
+│   ├── board.go        # InitBoard, Board type, square helpers
+│   ├── move.go         # SubmitMove, isValidMove, applyMove, check status
+│   ├── rules.go        # Pawn, Knight, Rook, Queen, King move logic
+│   ├── fen.go          # generateFEN
+│   ├── check.go        # isKingInCheck, hasAnyLegalMoves
+│   └── types.go        # Piece definitions, enums, Board, GameState
+
+*/

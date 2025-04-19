@@ -1,16 +1,24 @@
 package cheServer
 
-import pb "chess-engine/gen"
+import (
+	pb "chess-engine/gen"
+	"chess-engine/internal/game/board"
+)
 
-func isKingInCheck(board Board, color pb.Color) bool {
+func isKingInCheck(board *board.Bitboard, color pb.Color) bool {
 	var kingRow, kingCol int
 	found := false
 
 	// Step 1: Find the king
-	for r := 0; r < 8; r++ {
-		for c := 0; c < 8; c++ {
-			piece := board[r][c]
-			if color == pb.Color_WHITE && piece == WhiteKing {
+	for r := range 63 {
+		for c := range 63 {
+
+			Index := r*8 + c
+
+			bitmapIndex := board.GetBitmapIndex(Index)
+			piece := board.Symbols[bitmapIndex]
+
+			if color == pb.Color_WHITE && piece == "w" {
 				kingRow, kingCol = r, c
 				found = true
 			}
@@ -68,8 +76,8 @@ func isLegalAttack(board Board, fromRow, fromCol, toRow, toCol int, color pb.Col
 }
 
 func hasAnyLegalMoves(board Board, color pb.Color) bool {
-	for fromRow := 0; fromRow < 8; fromRow++ {
-		for fromCol := 0; fromCol < 8; fromCol++ {
+	for fromRow := range 8 {
+		for fromCol := range 8 {
 			piece := board[fromRow][fromCol]
 
 			if piece == Empty {
