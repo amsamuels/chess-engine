@@ -6,6 +6,8 @@ import (
 
 	pb "chess-engine/gen"
 	"chess-engine/internal/cheServer"
+	"chess-engine/internal/game"
+	"chess-engine/internal/game/board"
 )
 
 func TestSubmitMove(t *testing.T) {
@@ -23,10 +25,10 @@ func TestSubmitMove(t *testing.T) {
 				playerID := "p1"
 
 				// Setup initial board
-				board := cheServer.InitBoard()
+				board := board.NewChessBoard()
 
 				// Ensure it's white's turn and piece is white
-				s.GameState[gameID] = &cheServer.GameState{
+				s.GameState[gameID] = &game.GameState{
 					GameID:     gameID,
 					PlayerID:   playerID,
 					OpponentID: "p2",
@@ -54,9 +56,8 @@ func TestSubmitMove(t *testing.T) {
 				gameID := "game2"
 				playerID := "p1"
 
-				board := cheServer.InitBoard()
-
-				s.GameState[gameID] = &cheServer.GameState{
+				board := board.NewChessBoard()
+				s.GameState[gameID] = &game.GameState{
 					GameID:     gameID,
 					PlayerID:   playerID,
 					OpponentID: "p2",

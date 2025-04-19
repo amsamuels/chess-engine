@@ -5,6 +5,18 @@ import (
 	"fmt"
 )
 
+func ValidateCoordinates(from, to string) (int, int, int, int, error) {
+	fromRow, fromCol, err := squareToCoords(from)
+	if err != nil {
+		return 0, 0, 0, 0, fmt.Errorf("invalid from_square")
+	}
+	toRow, toCol, err := squareToCoords(to)
+	if err != nil {
+		return 0, 0, 0, 0, fmt.Errorf("invalid to_square")
+	}
+	return fromRow, fromCol, toRow, toCol, nil
+}
+
 func oppositeColor(color pb.Color) pb.Color {
 	if color == pb.Color_WHITE {
 		return pb.Color_BLACK

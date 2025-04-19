@@ -87,7 +87,7 @@ func (s *GameServer) SubmitMove(ctx context.Context, req *pb.MoveRequest) (*pb.M
 		return game.Fail("Game not found"), nil
 	}
 
-	fromRow, fromCol, toRow, toCol, err := validateCoordinates(req.FromSquare, req.ToSquare)
+	fromRow, fromCol, toRow, toCol, err := game.ValidateCoordinates(req.FromSquare, req.ToSquare)
 	if err != nil {
 		return game.Fail(err.Error()), nil
 	}
@@ -117,6 +117,14 @@ func (s *GameServer) SubmitMove(ctx context.Context, req *pb.MoveRequest) (*pb.M
 	session.Board.PrettyPrint()
 
 	return game.BuildMoveResponse(true, endMessage, fen, session.PlayerID), nil
+}
+
+func (s *GameServer) getGameByID(gameID string) (*game.GameState, error) {
+	game, ok := s.GameState[gameID]
+	if !ok {
+		return nil, fmt.Errorf("not found")
+	}
+	return game, nil
 }
 
 /*
