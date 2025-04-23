@@ -5,7 +5,7 @@ import (
 	"chess-engine/internal/game/board"
 )
 
-func isKingInCheck(b *board.Bitboard, color pb.Color) bool {
+func IsKingInCheck(b *board.Bitboard, color pb.Color) bool {
 	var kingRow, kingCol int
 	found := false
 
@@ -71,7 +71,7 @@ func isLegalAttack(b *board.Bitboard, fromIndex, toIndex int, color pb.Color) bo
 	return false
 }
 
-func hasAnyLegalMoves(b *board.Bitboard, color pb.Color) bool {
+func HasAnyLegalMoves(b *board.Bitboard, color pb.Color) bool {
 	for fromRow := 0; fromRow < 8; fromRow++ {
 		for fromCol := 0; fromCol < 8; fromCol++ {
 			fromIndex := fromRow*8 + fromCol
@@ -101,7 +101,7 @@ func hasAnyLegalMoves(b *board.Bitboard, color pb.Color) bool {
 						sim := b.Copy()
 						sim.MovePieceBit(int(piece), fromIndex, toIndex)
 
-						if !isKingInCheck(sim, color) {
+						if !IsKingInCheck(sim, color) {
 							return true
 						}
 					}

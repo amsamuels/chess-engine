@@ -4,16 +4,24 @@ import (
 	pb "chess-engine/gen"
 	"chess-engine/internal/game"
 	"chess-engine/internal/game/board"
+	"chess-engine/internal/game/session"
 	"context"
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource(time.Now().UnixNano())) // No need to seed the global rand in Go 1.20+
+}
+
+type GameManager struct {
+	Session   map[string]*session.GameState
+	joinQueue chan *session.GameSession
+	mu        sync.RWMutex
 }
 
 type GameServer struct {
@@ -21,26 +29,53 @@ type GameServer struct {
 	GameState map[string]*game.GameState
 }
 
-func New() *GameServer {
-	return &GameServer{
-		GameState: make(map[string]*game.GameState),
+func NewGameManager() *GameManager {
+	gm := &GameManager{
+		Session:   make(map[string]*session.GameState),
+		joinQueue: make(chan *session.GameSession, 10),
 	}
+	go gm.matchPlayers()
+	return gm
+}
+
+func (gm *GameManager) StartNewGame(ctx context.Context, playerID string) (string, error) {
+	gameID := uuid.NewString()
+	ready := make(chan struct{})
+	session := &session.GameState{
+		GameID:  gameID,
+		Player1: playerID,
+		Ready:   ready,
+		Input:   make(chan GameCommand),
+		State: &game.GameState{
+			GameID:    gameID,
+			PlayerID:  playerID,
+			Moves:     []string{},
+			Board:     board.NewChessBoard(),
+			TurnColor: pb.Color_WHITE,
+		},
+	}
+
+	gm.mu.Lock()
+	gm.sessions[gameID] = session
+	gm.mu.Unlock()
+
+	gm.joinQueue <- session
+
+	return gameID, nil // The client waits for notification through polling or future streaming
 }
 
 // StartGame starts a new chess game session.
-func (s *GameServer) StartGame(ctx context.Context, req *pb.StartGameRequest) (*pb.StartGameResponse, error) {
+func (m *GameServer) StartGame(ctx context.Context, req *pb.StartGameRequest) (*pb.StartGameResponse, error) {
 
 	// 1. Generate UUIDs for game, player, and opponent
 	gameID := uuid.NewString()
-	playerID := uuid.NewString()
-	opponentID := uuid.NewString() // or "AI" prefix if agent
 
 	// 2. Randomly assign a color (WHITE or BLACK)
 	color := pb.Color(rand.Intn(2))
 	oppColor := game.OppositeColor(color)
 
 	// 3. Create the GameState object
-	gs := &game.GameState{
+	gs := &session.GameState{
 		GameID:        gameID,
 		PlayerID:      playerID,
 		OpponentID:    opponentID,
